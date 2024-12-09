@@ -1,0 +1,53 @@
+import tensorflow as tf 
+from tensorflow import keras
+from keras.layers import Dense
+from keras.layers import Flatten
+
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+from keras.datasets import cifar10
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+cifar10_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+print('Example training images and their labels: ' + str([x[0] for x in y_train[0:10]])) 
+print('Corresponding classes for the labels: ' + str([cifar10_classes[x[0]] for x in y_train[0:10]]))
+
+fig, axarr = plt.subplots(1, 10)
+fig.set_size_inches(20, 6)
+
+for i in range(10):
+    image = x_train[i]
+    axarr[i].imshow(image)
+plt.show()
+
+x_train.shape, y_train.shape, x_test.shape, y_test.shape
+
+X_train = x_train / 255.0
+X_test = x_test / 255.0
+
+modelL = keras.Sequential()
+modelL.add(Flatten(input_shape=(32,32,3)))
+modelL.add(Dense(2048,activation='relu'))
+modelL.add(Dense(10,activation='softmax'))
+
+modelL.summary()
+
+modelL.compile(loss='sparse_categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+
+P1 = modelL.fit(X_train ,y_train,epochs=10,validation_data=(X_test,y_test))
+
+plt.plot(P1.history['loss'])
+plt.plot(P1.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'validation'], loc='upper right')
+plt.show()
+
+import numpy as np
+# Add a batch dimension to the input
+x_test_sample = np.expand_dims(x_test[20], axis=0)
+
+# Now pass it to the model for prediction
+modelL.predict(x_test_sample
