@@ -1,0 +1,97 @@
+# Import the important libraries
+import tensorflow as tf
+from tensorflow import keras
+from keras.layers import Dense
+from keras.layers import Flatten
+from sklearn.metrics import classification_report
+import pandas as pd
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+# Import the dataset
+from keras.datasets import cifar10
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+# Display the dataset obtained from cifar
+cifar10_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+print('Example training images and their labels: ' + str([x[0] for x in y_train[0:10]]))
+print('Corresponding classes for the labels: ' + str([cifar10_classes[x[0]] for x in y_train[0:10]]))
+
+fig, axarr = plt.subplots(1, 10)
+fig.set_size_inches(20, 6)
+
+for i in range(10):
+    image = x_train[i]
+    axarr[i].imshow(image)
+plt.show()
+
+x_train.shape, y_train.shape, x_test.shape, y_test.shape
+
+X_train = x_train / 255.0
+X_test = x_test / 255.0
+
+# Import the model
+modelL = tf.keras.applications.MobileNet(weights=None, input_shape=(32, 32, 3), classes=10)
+
+# Display the model summary
+modelL.summary()
+
+# Train the model
+modelL.compile(optimizer='adam',
+                   loss='sparse_categorical_crossentropy',
+                   metrics=['accuracy'])
+
+model = modelL.fit(x_train, y_train, epochs=10, validation_data=(x_test, y_test))
+
+
+# Add a batch dimension to the input image
+x_test_sample = np.expand_dims(x_test[20], axis=0)  # Select a test image, e.g., the 20th image
+
+# Predict probabilities for the test sample
+predictions = model.predict(x_test_sample)
+
+# Get the index of the class with the highest probability
+predicted_class_index = np.argmax(predictions)
+
+# Get the corresponding class name
+predicted_class_name = cifar10_classes[predicted_class_index]
+
+# Print the predicted class
+print(f"The predicted class is: {predicted_class_name}")
+
+plt.plot(model.history['loss'], label='Training Loss')
+plt.plot(model.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+# Predict on test data
+y_pred = np.argmax(model.predict(x_test), axis=1)
+# Compute confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=cifar10_classes)
+# Display confusion matrix
+disp.plot(cmap='viridis')
+plt.title('Confusion Matrix')
+plt.show()
+
+# Generate classification report
+report = classification_report(y_test, y_pred, target_names=cifar10_classes, output_dict=True)
+df_report = pd.DataFrame(report).transpose()
+# Heatmap of classification metrics
+sns.heatmap(df_report.iloc[:-1, :-1], annot=True, cmap='coolwarm', fmt=".2f")
+plt.title('Classification Report Metrics')
+plt.show()
+
+# To show accuracy of each class
+class_accuracies = cm.diagonal() / cm.sum(axis=1)
+plt.bar(cifar10_classes, class_accuracies)
+plt.title('Per-Class Accuracy')
+plt.xlabel('Class')
+plt.ylabel('Accuracy')
+plt.xticks(rotation=45)
+plt.show()
